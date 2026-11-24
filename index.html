@@ -12,7 +12,7 @@
         .login-box, .modal-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 380px; text-align: center; }
         .input-group { margin-bottom: 12px; text-align: right; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #334155; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px;text-align: center; }
         .btn-primary { width: 100%; padding: 12px; background: #1e3a8a; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
         .btn-primary:disabled { background: #94a3b8; }
         
@@ -75,6 +75,81 @@
                 print-color-adjust: exact !important; 
             }
         }
+                /* ==========================================
+           تحسين العرض وتجاوب الشاشة على الهواتف
+           ========================================== */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px !important;
+            }
+            .card {
+                padding: 12px !important;
+            }
+            /* ضبط الترويسة العلوية على الهاتف */
+            .header {
+                flex-direction: column !important;
+                text-align: center !important;
+                gap: 10px !important;
+                padding: 12px !important;
+            }
+            .header > div {
+                width: 100%;
+                justify-content: center !important;
+                flex-wrap: wrap;
+            }
+            /* جعل التبويبات متراصة بشكل أنيق */
+            .tabs {
+                flex-direction: column !important;
+            }
+            .tab-btn {
+                width: 100% !important;
+                padding: 10px !important;
+                font-size: 14px !important;
+                border-bottom: 1px solid rgba(255,255,255,0.15);
+            }
+            /* جعل الحقول في عمود واحد مريح للإدخال */
+            .grid {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+            /* ترتيب البطاقات الإحصائية الستة في صفّين (3×2 أو 2×3) بدلاً من عمود طويل */
+            #school-stats-panel, #report-summary-cards {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                padding: 10px !important;
+            }
+            /* ضبط شريط عنوان المدرسة والأزرار */
+            .top-bar {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                text-align: center !important;
+                gap: 10px !important;
+            }
+            .top-bar > div {
+                justify-content: center !important;
+            }
+            /* منع ضغط أعمدة الجدول وتسهيل التمرير الأفقي بالإصبع */
+            .table-responsive table {
+                min-width: 680px;
+                margin-top: 0 !important;
+            }
+            .table-responsive th, 
+            .table-responsive td {
+                white-space: nowrap;
+                padding: 8px 10px !important;
+                font-size: 13px !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -159,7 +234,13 @@
     
         <div>
             <label style="font-size:12px; font-weight:bold;">رقم موبايل المعلم:</label>
-            <input type="tel" id="info-teacher-phone" inputmode="numeric" maxlength="11" placeholder="010xxxxxxxx">
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input type="tel" id="info-teacher-phone" inputmode="numeric" maxlength="11" placeholder="010xxxxxxxx" oninput="updateTeacherContactButtons()" style="flex:1; margin:0;">
+                <div id="admin-teacher-actions" style="display:none; gap:5px;">
+                    <a id="teacher-call-btn" href="#" style="background:#0284c7; color:#fff; padding:10px 12px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold; white-space:nowrap;">اتصال 📞</a>
+                    <a id="teacher-wa-btn" href="#" target="_blank" style="background:#25D366; color:#fff; padding:10px 12px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold; white-space:nowrap;">واتساب 💬</a>
+                </div>
+            </div>
         </div>
         <div>
             <label id="info-total-label" style="font-size:12px; font-weight:bold;">إجمالي عدد الطلاب:</label>
@@ -213,9 +294,10 @@
     <input type="text" id="quick-search" oninput="filterStudentsTable()" placeholder="🔍 بحث سريع بالاسم أو كود الطالب أو رقم التواصل..." style="border: 2px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 14px; background-color: #f8fafc;">
 </div>
 
+<div class="table-responsive">
 
-                <table>
-<thead>
+    <table>
+        <thead>
                     <tr>
                         <th style="width:35px;">م</th>
                         <th>الصورة</th>
@@ -231,9 +313,9 @@
 
         <!-- نهاية جدول الطلاب -->
         </tbody>
-    </table>
-</div> <!-- ⬅️ ضع إغلاق entry-section هنا بعد جدول الطلاب -->
-
+        </table>
+    </div> <!-- ⬅️ ضع إغلاق entry-section هنا بعد جدول الطلاب -->
+</div>
 
 <!-- التبويب الرابع: تقارير وإحصائيات جميع المدارس -->
 <div id="reports-section" style="display:none;">
@@ -261,6 +343,8 @@
     </div>
 
     <!-- جدول مقارنة المدارس -->
+     <div class="table-responsive">
+
     <table>
         <thead>
             <tr>
@@ -277,6 +361,7 @@
         </thead>
         <tbody id="report-tbody"></tbody>
     </table>
+    </div>
 </div>
 
     </div>
@@ -330,7 +415,7 @@ let allSchoolsDetails = {}; // لتخزين بيانات المعلمين وأع
 function loadSchools() {
     const sel = document.getElementById("login-user");
     const btn = document.getElementById("login-btn");
-    fetch(LOGIN_SCRIPT_URL)
+fetch(LOGIN_SCRIPT_URL + "?token=Mansoura_Admin_2026")
         .then(r => r.json())
         .then(data => {
             const schools = Array.isArray(data) ? data : (data.schools || []);
@@ -371,7 +456,76 @@ function populateSchoolInfoFields() {
     document.getElementById("info-teacher-name").value = info.teacher || "";
     document.getElementById("info-teacher-phone").value = info.phone || "";
     document.getElementById("info-total-students").value = info.total || "";
+    updateTeacherContactButtons();
+
 }
+
+        // ==========================================
+        // تحديث أزرار اتصال وواتساب المعلم (للتوجيه فقط)
+        // ==========================================
+        function updateTeacherContactButtons() {
+            const actionsBox = document.getElementById("admin-teacher-actions");
+            const phoneInput = document.getElementById("info-teacher-phone");
+            const labelEl = document.getElementById("teacher-contact-label");
+            if (!actionsBox || !phoneInput) return;
+
+            // في وضع المدارس: إظهار حقل الرقم لتعديله وإخفاء أزرار التوجيه
+            if (!isAdmin) {
+                phoneInput.style.display = "block";
+                actionsBox.style.display = "none";
+                if (labelEl) labelEl.innerText = "رقم موبايل المعلم:";
+                return;
+            }
+
+            // في وضع التوجيه: إخفاء حقل الرقم والاكتفاء بزري الاتصال والواتساب
+            phoneInput.style.display = "none";
+            actionsBox.style.display = "flex";
+            actionsBox.style.width = "100%";
+            if (labelEl) labelEl.innerText = "التواصل مع المعلم:";
+
+            const rawPh = phoneInput.value.trim();
+            const teacherName = document.getElementById("info-teacher-name").value.trim() || "زميلنا العزيز";
+            const schoolName = activeSchool.trim();
+            const subjectName = TABS_CONFIG[currentTab].name;
+
+            const callBtn = document.getElementById("teacher-call-btn");
+            const waBtn = document.getElementById("teacher-wa-btn");
+
+            // جعل الزرين متساويين ويملآن الخانة بالكامل
+            callBtn.style.flex = "1";
+            callBtn.style.textAlign = "center";
+            waBtn.style.flex = "1";
+            waBtn.style.textAlign = "center";
+
+            let cleanPh = rawPh.replace(/\D/g, '');
+            if (!cleanPh) {
+                callBtn.style.opacity = "0.5";
+                waBtn.style.opacity = "0.5";
+                callBtn.href = "javascript:void(0)";
+                waBtn.href = "javascript:void(0)";
+                return;
+            }
+
+            callBtn.style.opacity = "1";
+            waBtn.style.opacity = "1";
+
+            // تجهيز رقم الاتصال بصيغة 010...
+            const dialPh = (cleanPh.length === 10 && cleanPh.startsWith("1")) ? "0" + cleanPh : cleanPh;
+            callBtn.href = "tel:" + dialPh;
+
+            // تجهيز رقم الواتساب بصيغة 2010...
+            let waPh = cleanPh;
+            if (waPh.startsWith("0")) {
+                waPh = "2" + waPh;
+            } else if (waPh.length === 10 && waPh.startsWith("1")) {
+                waPh = "20" + waPh;
+            }
+
+            const msg = "السلام عليكم أ/ " + teacherName + "، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
+                        "بخصوص متابعة إنجاز طلاب (" + schoolName + ") في (" + subjectName + ").";
+
+            waBtn.href = "https://wa.me/" + waPh + "?text=" + encodeURIComponent(msg);
+        }
 
 // 3. دالة حفظ بيانات المدرسة والمعلم في جدول LoginPage_0
 function saveSchoolDetails() {
@@ -536,6 +690,7 @@ function changeAdminSchool(newSchool) {
 }
 
         async function fetchTabData() {
+
             const cfg = TABS_CONFIG[currentTab];
             const loader = document.getElementById("loader");
             if (loader) loader.style.display = "block";
