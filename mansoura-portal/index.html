@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة المتابعة الموحدة - إدارة شرق المنصورة التعليمية</title>
+    <style>
+        body { font-family: Tahoma, 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: #eef2f5; }
+        
+        /* شاشة الدخول والنافذة المنبثقة */
+        #login-screen { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #1e3a8a, #2563eb); }
+        .login-box, .modal-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 380px; text-align: center; }
+        .input-group { margin-bottom: 12px; text-align: right; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #334155; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .btn-primary { width: 100%; padding: 12px; background: #1e3a8a; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .btn-primary:disabled { background: #94a3b8; }
+        
+        /* الهيدر والتبويبات */
+        #main-portal { display: none; }
+        .header { background-color: #1e3a8a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header h1 { margin: 0; font-size: 1.3rem; }
+        .header p { margin: 4px 0 0; font-size: 0.85rem; color: #cbd5e1; }
+        .user-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .change-pass-btn { background: #f59e0b; color: #1e3a8a; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .logout-btn { background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .tabs { display: flex; justify-content: center; background-color: #1e40af; border-bottom: 3px solid #f59e0b; flex-wrap: wrap; }
+        .tab-btn { background: inherit; color: white; border: none; cursor: pointer; padding: 14px 22px; font-size: 15px; font-weight: bold; transition: 0.3s; }
+        .tab-btn:hover { background-color: #2563eb; }
+        .tab-btn.active { background-color: #f59e0b; color: #1e3a8a; }
+
+        /* منطقة العمل الموحدة */
+        .card { max-width: 900px; margin: 20px auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; background: #eaf2f8; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
+        .btn-sm { padding: 8px 12px; font-size: 13px; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
+        .btn-save { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 9px; text-align: center; font-size: 13px; }
+        th { background: #1a5276; color: #fff; }
+        .bar { background: #e0e0e0; border-radius: 10px; overflow: hidden; height: 18px; }
+        .fill { background: #2980b9; height: 100%; color: #fff; font-size: 11px; line-height: 18px; }
+        #loader { text-align: center; color: #e67e22; font-weight: bold; margin-bottom: 10px; display: none; }
+
+        /* النافذة المنبثقة */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); justify-content: center; align-items: center; z-index: 9999; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .cancel-btn { width: 100%; padding: 12px; background: #64748b; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+
+        @media print {
+            #login-screen, 
+            .header, 
+            .tabs, 
+            form, 
+            .btn-sm, 
+            #saveSchoolInfoBtn, 
+            #quick-search, 
+            #admin-school-bar { 
+                display: none !important; 
+            }
+            body { 
+                background: #fff !important; 
+                padding: 0; 
+            }
+            .card { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                max-width: 100% !important; 
+                padding: 10px !important; 
+            }
+            th, .fill, #school-stats-panel, .top-bar { 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. شاشة تسجيل الدخول -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color:#1e3a8a; margin-top:0;">تسجيل الدخول</h2>
+            <p style="color:#64748b; font-size:13px;">بوابة متابعة منصات التعليم - شرق المنصورة</p>
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label>اسم المستخدم (المدرسة)</label>
+                    <select id="login-user" required disabled><option>جاري تحميل المدارس...</option></select>
+                </div>
+                <div class="input-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="login-pass" required placeholder="أدخل كلمة المرور">
+                </div>
+                <button type="submit" id="login-btn" class="btn-primary" disabled>دخول</button>
+                <div id="login-error" style="color:#dc2626; font-size:13px; margin-top:10px; display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. البوابة الموحدة -->
+    <div id="main-portal">
+        <div class="header">
+            <div>
+                <h1>بوابة المتابعة الموحدة - إدارة شرق المنصورة التعليمية</h1>
+                <p>توجيه الحاسب الآلي - تصميم أ/ محمد ابراهيم</p>
+            </div>
+            <div class="user-info">
+                <span id="welcome-school" style="font-weight:bold; color:#fbbf24;"></span>
+                <button class="change-pass-btn" onclick="openPasswordModal()">تغيير كلمة المرور</button>
+                <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+            </div>
+        </div>
+
+        <!-- التبويبات الأربع -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('g1', this)">أولى ثانوي (كيريو)</button>
+    <button class="tab-btn" onclick="switchTab('g2_finance', this)">ثانية ثانوي (الثقافة المالية)</button>
+    <button class="tab-btn" onclick="switchTab('g2_bac', this)">ثانية ثانوي بكالوريا (كيريو)</button>
+    <button id="reports-tab-btn" class="tab-btn" onclick="openReportsTab(this)" style="display:none; border-right: 1px solid rgba(255,255,255,0.2);">📊 تقارير جميع المدارس</button>
+</div>
+
+        <!-- الواجهة الديناميكية الموحدة -->
+        <div class="card">
+            <div id="loader">جاري مزامنة البيانات   ...</div>
+            
+            <!-- شريط اختيار المدرسة للتوجيه فقط -->
+            <div id="admin-school-bar" style="display:none; background:#fff3cd; padding:10px; border-radius:6px; margin-bottom:15px;">
+                <label style="font-weight:bold; font-size:13px;">وضع التوجيه - اختر المدرسة للمتابعة:</label>
+                <select id="adminSchoolSel" onchange="changeAdminSchool(this.value)"></select>
+            </div>
+
+
+            <!-- نموذج الإدخال الموحد -->
+            <div id="entry-section">
+                            <div class="top-bar">
+                <strong id="board-title" style="color:#1a5276; font-size:15px;"></strong>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="btn-sm" style="background:#c0392b" onclick="window.print()">تصدير PDF</button>
+                    <button type="button" id="congrats-btn" class="btn-sm" style="background:#2d3cc0" onclick="openCongrats()">تهنئة الأوائل</button>
+                </div>
+            </div>
+
+                <!-- القسم الأول: بيانات المدرسة والمعلم -->
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:20px;">
+            <h4 style="margin:0 0 12px 0; color:#1e3a8a; border-bottom:2px solid #f59e0b; padding-bottom:6px; display:inline-block;">
+        أولاً: بيانات المدرسة والمعلم المسئول
+    </h4>
+    <div class="grid">
+        <div>
+            <label style="font-size:12px; font-weight:bold;">اسم المدرسة:</label>
+            <input type="text" id="info-school-name" readonly style="background:#e2e8f0; font-weight:bold; color:#1e3a8a;">
+        </div>
+        <div>
+            <label id="info-teacher-label" style="font-size:12px; font-weight:bold;">اسم المعلم:</label>
+            <input type="text" id="info-teacher-name" placeholder="أدخل اسم المعلم المسئول">
+        </div>
+    
+        <div>
+            <label style="font-size:12px; font-weight:bold;">رقم موبايل المعلم:</label>
+            <input type="tel" id="info-teacher-phone" inputmode="numeric" maxlength="11" placeholder="010xxxxxxxx">
+        </div>
+        <div>
+            <label id="info-total-label" style="font-size:12px; font-weight:bold;">إجمالي عدد الطلاب:</label>
+            <input type="number" id="info-total-students" min="1" placeholder="عدد الطلاب">
+        </div>
+    </div>
+    <button type="button" id="saveSchoolInfoBtn" onclick="saveSchoolDetails()" style="background:#1e40af; color:white; border:none; padding:10px 18px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; width:100%;">
+        حفظ وتحديث بيانات المدرسة والمعلم
+    </button>
+
+</div>
+
+<!-- القسم الثاني: تسجيل ومتابعة الطلاب -->
+<h4 style="margin:0 0 12px 0; color:#16a34a; border-bottom:2px solid #16a34a; padding-bottom:6px; display:inline-block;">
+    ثانياً: تسجيل ومتابعة إنجاز الطلاب
+</h4>
+
+                <form id="unifiedForm" onsubmit="saveStudentData(event)">
+                    <div class="grid">
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">كود الطالب:</label>
+                            <input type="text" id="stCode" inputmode="numeric" placeholder="أدخل الكود (أرقام فقط)" required>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">اسم الطالب:</label>
+                            <input type="text" id="stName" placeholder="للتسجيل الجديد فقط">
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">رقم التواصل:</label>
+                            <input type="tel" id="stPhone" inputmode="numeric" maxlength="11" placeholder="010xxxxxxxx">
+                        </div>
+                        <div>
+                            <label id="lvl-label" style="font-size:12px; font-weight:bold;">المستوى (من 42):</label>
+                            <select id="stLvl" required></select>
+                        </div>
+                        <div>
+                            <label style="font-size:12px; font-weight:bold;">صورة الإنجاز:</label>
+                            <input type="file" id="stImg" accept="image/*">
+                        </div>
+                    </div>
+                    <button type="submit" id="saveBtn" class="btn-save">حفظ وتحديث في جوجل شيت ودرايف</button>
+                </form>
+                <!-- لوحة إحصائيات المدرسة للتبويب الحالي -->
+<div id="school-stats-panel" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(125px, 1fr)); gap:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px; margin-top:18px; text-align:center;">
+
+</div>
+
+
+<!-- مربع البحث السريع -->
+<div style="margin-top: 18px; margin-bottom: -5px;">
+    <input type="text" id="quick-search" oninput="filterStudentsTable()" placeholder="🔍 بحث سريع بالاسم أو كود الطالب أو رقم التواصل..." style="border: 2px solid #cbd5e1; border-radius: 6px; padding: 10px; font-size: 14px; background-color: #f8fafc;">
+</div>
+
+
+                <table>
+<thead>
+                    <tr>
+                        <th style="width:35px;">م</th>
+                        <th>الصورة</th>
+                        <th>اسم الطالب</th>
+                        <th>الكود</th>
+                        <th>رقم التواصل</th>
+                        <th>المستوى</th>
+                        <th>النسبة</th>
+                        <th>تاريخ التحديث</th>
+                    </tr>
+                </thead>
+                    <tbody id="students-tbody">
+
+        <!-- نهاية جدول الطلاب -->
+        </tbody>
+    </table>
+</div> <!-- ⬅️ ضع إغلاق entry-section هنا بعد جدول الطلاب -->
+
+
+<!-- التبويب الرابع: تقارير وإحصائيات جميع المدارس -->
+<div id="reports-section" style="display:none;">
+    <div class="top-bar" style="background:#f3e8ff; border-right:4px solid #8e44ad;">
+        <strong style="color:#6b21a8; font-size:16px;">📊 التقرير الإحصائي الشامل لجميع مدارس الإدارة</strong>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-sm" style="background:#16a34a;" onclick="exportReportToCSV()">تصدير Excel (CSV)</button>
+            <button type="button" class="btn-sm" style="background:#c0392b;" onclick="window.print()">تصدير PDF</button>
+
+        </div>
+    </div>
+
+    <!-- شريط اختيار المادة للتقرير -->
+    <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:12px; border-radius:8px; margin-bottom:15px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <label style="font-weight:bold; color:#1e3a8a; margin:0;">اختر المادة / الصف لعرض التقرير:</label>
+        <select id="report-subject-select" onchange="loadComprehensiveReport(this.value)" style="max-width:320px; margin:0; font-weight:bold; border-color:#8e44ad;">
+            <option value="g1">أولى ثانوي (برمجة - منصة كيريو 42 مستوى)</option>
+            <option value="g2_finance">ثانية ثانوي (الثقافة المالية 6 مستويات)</option>
+            <option value="g2_bac">ثانية ثانوي بكالوريا (برمجة - كيريو 42 مستوى)</option>
+        </select>
+    </div>
+
+    <!-- بطاقات ملخص إجمالي الإدارة للمادة المختارة -->
+    <div id="report-summary-cards" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; background:#f3e8ff; padding:15px; border-radius:8px; margin-bottom:15px; text-align:center;">
+    </div>
+
+    <!-- جدول مقارنة المدارس -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35px;">م</th>
+                <th>اسم المدرسة</th>
+                <th>إجمالي الطلاب</th>
+                <th>لم يسجلوا</th>
+                <th>المسجلون</th>
+                <th>أقل من 50%</th>
+                <th>أنجزوا 50% فأكثر</th>
+                <th>أتموا 100%</th>
+                <th style="width:125px;">نسبة الإتمام</th>
+            </tr>
+        </thead>
+        <tbody id="report-tbody"></tbody>
+    </table>
+</div>
+
+    </div>
+
+
+
+<script>
+            // ==========================================
+// 1. إعدادات الربط والتبويبات (عدّل الروابط هنا فقط)
+// ==========================================
+const LOGIN_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2_O-H9jMUzU5-3h6EdU7kyak_ELi1c3NqgA5giQPo7McjpNsLHo1mHLhV3anJDKUdWA/exec";
+const TABS_CONFIG = {
+g1: {
+name: "أولى ثانوي (كيريو)",
+maxLevels: 42,
+sheetUrl: "https://script.google.com/macros/s/AKfycbwDbq-O9mCA-1l2aD0JMNNmBEiTeKYs5IpndLLzHxEuzDJOj64MLSOFPosnzT1xELDFQg/exec"
+},
+g2_finance: {
+name: "ثانية ثانوي (الثقافة المالية)",
+maxLevels: 6,
+sheetUrl: "https://script.google.com/macros/s/AKfycbymb3Os_OKBJUAItaYk8L339gGY8qG9_6naVDId8ZMWLIcWKCnV0THJP62-WCCGb0TfSw/exec"
+},
+g2_bac: {
+name: "ثانية ثانوي بكالوريا (كيريو)",
+maxLevels: 49, // غيّر الرقم إذا كان عدد مستويات البكالوريا مختلفاً
+sheetUrl: "https://script.google.com/macros/s/AKfycbwuo9mX4I2AE1H1uFHNflwiyt11Gps9ijn5WkyFW6duSaQ03sk6upXCHtOvTDXCKgnpbw/exec"
+}
+};
+let currentTab = "g1";
+let activeSchool = "";
+let isAdmin = false;
+let currentStudents = [];
+let currentTotals = {};
+// ==========================================
+// 2. نظام تسجيل الدخول وتغيير كلمة المرور
+// ==========================================
+window.onload = function() {
+    const savedSchool = sessionStorage.getItem("loggedSchool");
+    // جلب بيانات المدارس والمعلمين دائماً سواء كان مسجلاً أم لا
+    loadSchools(); 
+    
+    if (savedSchool) {
+        initPortal(savedSchool);
+    }
+};
+
+
+let allSchoolsDetails = {}; // لتخزين بيانات المعلمين وأعداد الطلاب لكل المدارس
+
+// 1. تعديل دالة تحميل المدارس لقراءة التفاصيل أيضاً
+function loadSchools() {
+    const sel = document.getElementById("login-user");
+    const btn = document.getElementById("login-btn");
+    fetch(LOGIN_SCRIPT_URL)
+        .then(r => r.json())
+        .then(data => {
+            const schools = Array.isArray(data) ? data : (data.schools || []);
+            allSchoolsDetails = data.details || {};
+            
+            sel.innerHTML = '<option value="" disabled selected>-- اختر المدرسة --</option>';
+            const adminSel = document.getElementById("adminSchoolSel");
+            adminSel.innerHTML = "";
+            schools.forEach(s => {
+                sel.add(new Option(s, s));
+                if (s.trim() !== "توجيه الحاسب الآلي") adminSel.add(new Option(s, s));
+            });
+            sel.disabled = false;
+            btn.disabled = false;
+            
+            // تحديث الحقول إذا كان المستخدم مسجلاً بالفعل
+if (activeSchool) {
+    populateSchoolInfoFields();
+    renderStudentsTable();
+}
+        });
+}
+
+// 2. دالة تعبئة بيانات المعلم وعدد الطلاب حسب التبويب والمدرسة
+function populateSchoolInfoFields() {
+    const sch = activeSchool.trim();
+    document.getElementById("info-school-name").value = sch;
+    
+    const labels = {
+        g1: { t: "اسم معلم برمجة أولى ثانوي:", c: "عدد طلاب أولى ثانوي برمجة:" },
+        g2_bac: { t: "اسم معلم برمجة ثانية ثانوي:", c: "عدد طلاب ثانية ثانوي برمجة:" },
+        g2_finance: { t: "اسم معلم ثقافة مالية:", c: "عدد طلاب ثانية ثانوي ثقافة مالية:" }
+    };
+    document.getElementById("info-teacher-label").innerText = labels[currentTab].t;
+    document.getElementById("info-total-label").innerText = labels[currentTab].c;
+
+    const info = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab] : {};
+    document.getElementById("info-teacher-name").value = info.teacher || "";
+    document.getElementById("info-teacher-phone").value = info.phone || "";
+    document.getElementById("info-total-students").value = info.total || "";
+}
+
+// 3. دالة حفظ بيانات المدرسة والمعلم في جدول LoginPage_0
+function saveSchoolDetails() {
+    const teacher = document.getElementById("info-teacher-name").value.trim();
+    const phone = document.getElementById("info-teacher-phone").value.trim();
+    const total = document.getElementById("info-total-students").value.trim();
+    const btn = document.getElementById("saveSchoolInfoBtn");
+
+    btn.disabled = true;
+    btn.innerText = "جاري حفظ البيانات...";
+
+    const fd = new URLSearchParams({
+        action: "saveSchoolInfo",
+        username: activeSchool.trim(),
+        tab: currentTab,
+        teacher: teacher,
+        phone: phone,
+        total: total
+    });
+
+    fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
+        .then(r => r.json())
+        .then(res => {
+            alert(res.message || "تم الحفظ بنجاح!");
+            // تحديث الذاكرة المحلية فوراً
+            if (!allSchoolsDetails[activeSchool.trim()]) allSchoolsDetails[activeSchool.trim()] = {};
+            allSchoolsDetails[activeSchool.trim()][currentTab] = { teacher, phone, total };
+            renderStudentsTable();
+        })
+        .catch(() => alert("حدث خطأ أثناء الحفظ."))
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerText = "حفظ وتحديث بيانات المدرسة والمعلم";
+        });
+}
+
+
+function handleLogin(e) {
+e.preventDefault();
+const user = document.getElementById("login-user").value.trim();
+const pass = document.getElementById("login-pass").value.trim();
+const btn = document.getElementById("login-btn");
+const err = document.getElementById("login-error");
+btn.disabled = true; btn.innerText = "جاري التحقق..."; err.style.display = "none";
+const fd = new URLSearchParams({ username: user, password: pass });
+fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
+.then(r => r.json())
+.then(res => {
+if (res.success) {
+sessionStorage.setItem("loggedSchool", user);
+initPortal(user);
+} else {
+err.innerText = "كلمة المرور غير صحيحة!"; err.style.display = "block";
+}
+})
+.finally(() => { btn.disabled = false; btn.innerText = "دخول"; });
+}
+
+
+        function initPortal(school) {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("main-portal").style.display = "block";
+            document.getElementById("welcome-school").innerText = school;
+
+            const reportsBtn = document.getElementById("reports-tab-btn");
+
+            if (school.trim() === "توجيه الحاسب الآلي") {
+                isAdmin = true;
+                document.getElementById("admin-school-bar").style.display = "block";
+                if (reportsBtn) reportsBtn.style.display = "inline-block";
+                activeSchool = document.getElementById("adminSchoolSel").value || "1. مدرسة منشأة السلام الثانوية";
+            } else {
+                isAdmin = false;
+                document.getElementById("admin-school-bar").style.display = "none";
+                if (reportsBtn) reportsBtn.style.display = "none";
+                activeSchool = school;
+            }
+
+            if (Object.keys(allSchoolsDetails).length === 0) {
+                loadSchools(); 
+            } else {
+                populateSchoolInfoFields();
+            }
+
+            switchTab("g1", document.querySelector(".tab-btn"));
+        }
+
+        function logout() {
+sessionStorage.removeItem("loggedSchool");
+location.reload();
+}
+// ==========================================
+// 3. التبديل الديناميكي بين التبويبات الثلاثة
+// ==========================================
+
+
+        function switchTab(tabKey, btnElement) {
+            document.getElementById("entry-section").style.display = "block";
+            document.getElementById("reports-section").style.display = "none";
+            if (isAdmin) document.getElementById("admin-school-bar").style.display = "block"; // ✅ أضف هذا السطر هنا
+
+            currentTab = tabKey;
+            const cfg = TABS_CONFIG[tabKey];
+
+            // 1. تحديث شكل أزرار التبويبات
+            document.querySelectorAll(".tab-btn").forEach(function(b) {
+                b.classList.remove("active");
+            });
+            if (btnElement) {
+                btnElement.classList.add("active");
+            }
+
+            // 2. تحديث بيانات المدرسة والمعلم
+            if (typeof populateSchoolInfoFields === "function") {
+                populateSchoolInfoFields();
+            }
+
+            // 3. تحديث النصوص بأمان
+            var lblEl = document.getElementById("lvl-label");
+            if (lblEl) lblEl.innerText = "المستوى (من " + cfg.maxLevels + "):";
+
+            var congEl = document.getElementById("congrats-btn");
+            if (congEl) congEl.innerText = "تهنئة أوائل " + cfg.maxLevels + " مستوى";
+
+            var statColEl = document.getElementById("stat-col-final");
+            if (statColEl) statColEl.innerText = "أتموا " + cfg.maxLevels + " مستوى";
+
+            // 4. تعبئة قائمة المستويات فوراً كقائمة افتراضية
+            var lSel = document.getElementById("stLvl");
+            if (lSel) {
+                lSel.innerHTML = "";
+                var defOpt = document.createElement("option");
+                defOpt.value = "";
+                defOpt.text = "-- اختر المستوى --";
+                defOpt.disabled = true;
+                defOpt.selected = true;
+                lSel.appendChild(defOpt);
+
+                for (var i = 0; i <= cfg.maxLevels; i++) {
+                    var opt = document.createElement("option");
+                    opt.value = i;
+                    opt.text = (i === 0) ? "0 - لم يبدأ" : "المستوى " + i + " من " + cfg.maxLevels;
+                    lSel.appendChild(opt);
+                }
+            }
+
+            // 5. جلب بيانات الطلاب والمستويات من جوجل شيت
+            if (typeof fetchTabData === "function") {
+                fetchTabData();
+            }
+
+            const searchInput = document.getElementById("quick-search");
+            if (searchInput) searchInput.value = "";
+
+        }
+
+
+function changeAdminSchool(newSchool) {
+    activeSchool = newSchool;
+    populateSchoolInfoFields(); // ✅ تحديث بيانات المعلم للمدرسة المختارة
+    renderStudentsTable();
+}
+
+        async function fetchTabData() {
+            const cfg = TABS_CONFIG[currentTab];
+            const loader = document.getElementById("loader");
+            if (loader) loader.style.display = "block";
+            
+            const lSel = document.getElementById("stLvl");
+            
+            // تعبئة المستويات فوراً قبل انتظار الشبكة لضمان عملها دائماً
+            function fillLevelsDropdown(levelsArray) {
+                if (!lSel) return;
+                lSel.innerHTML = "";
+                
+                const defOpt = document.createElement("option");
+                defOpt.value = "";
+                defOpt.text = "-- اختر المستوى --";
+                defOpt.disabled = true;
+                defOpt.selected = true;
+                lSel.appendChild(defOpt);
+
+                if (levelsArray && levelsArray.length > 0) {
+                    const maxVal = Number(levelsArray[levelsArray.length - 1]) || cfg.maxLevels;
+                    levelsArray.forEach(function(lvl) {
+                        const opt = document.createElement("option");
+                        opt.value = lvl;
+                        opt.text = (lvl === "0") ? "0 - لم يبدأ" : "المستوى " + lvl + " من " + maxVal;
+                        lSel.appendChild(opt);
+                    });
+                } else {
+                    for (let i = 0; i <= cfg.maxLevels; i++) {
+                        const opt = document.createElement("option");
+                        opt.value = i;
+                        opt.text = (i === 0) ? "0 - لم يبدأ" : "المستوى " + i + " من " + cfg.maxLevels;
+                        lSel.appendChild(opt);
+                    }
+                }
+            }
+
+            // تعبئة مبدئية فورية
+            fillLevelsDropdown(null);
+
+            try {
+                const res = await fetch(cfg.sheetUrl + "?token=Mansoura_Admin_2026");
+                const json = await res.json();
+                
+                currentStudents = Array.isArray(json) ? json : (json.students || []);
+                currentTotals = json.totals || {};
+                
+                // تحديث المستويات من ورقة Levels إن وجدت
+                if (json.levels && json.levels.length > 0) {
+                    fillLevelsDropdown(json.levels);
+                }
+
+                renderStudentsTable();
+                if (typeof renderStatsTable === "function") {
+                    renderStatsTable();
+                }
+            } catch (e) {
+                console.error("خطأ في المزامنة:", e);
+            } finally {
+                if (loader) loader.style.display = "none";
+            }
+        }
+
+
+        function renderStudentsTable() {
+            const cfg = TABS_CONFIG[currentTab];
+            const sch = activeSchool.trim();
+            const infoTotal = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab].total : 0;
+            const totalCount = infoTotal || currentTotals[sch] || 0;
+            
+            document.getElementById("board-title").innerText = sch + " (إجمالي الطلاب: " + totalCount + ")";
+
+            const tbody = document.getElementById("students-tbody");
+            tbody.innerHTML = "";
+
+            // تصفية طلاب المدرسة وترتيبهم تنازلياً حسب المستوى (الأعلى أولاً)
+            const schoolStudents = currentStudents
+                .filter(st => (st.school || st.s || "").toString().trim() === sch)
+                .sort((a, b) => Number(b.level || b.l || 0) - Number(a.level || a.l || 0));
+            
+            schoolStudents.forEach(function(st, index) {
+                const lvl = Number(st.level || st.l || 0);
+                const name = st.name || st.n || "";
+                const code = st.code || st.c || "";
+                const rawPh = (st.phone || st.ph || "").toString().trim();
+                const img = st.image || st.img || "";
+                const updated = st.updatedAt || "-";
+                const pct = Math.round((lvl / cfg.maxLevels) * 100);
+            // تحديث بطاقات إحصائية المدرسة للتبويب الحالي
+            updateSchoolStatsPanel(schoolStudents, totalCount, cfg.maxLevels);
+
+                // رابط الصورة
+                const imgLink = img 
+                    ? '<a href="' + img + '" target="_blank" style="color:#2980b9;font-weight:bold;text-decoration:none;">عرض الصورة</a>' 
+                    : '-';
+
+                // رابط الواتساب الذكي
+                let waLink = '-';
+                if (rawPh) {
+                    let cleanPh = rawPh.replace(/\D/g, '');
+                    if (cleanPh.startsWith('0')) {
+                        cleanPh = '2' + cleanPh;
+                    } else if (cleanPh.length === 10 && cleanPh.startsWith('1')) {
+                        cleanPh = '20' + cleanPh;
+                    }
+
+                    const statusMsg = (lvl >= cfg.maxLevels) 
+                        ? "نبارك لك إتمام جميع المستويات بنجاح." 
+                        : "نرجو الاستمرار في إكمال باقي المستويات.";
+
+                    const msg = "السلام عليكم، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
+                                "الطالب/ة: " + name + "\n" +
+                                "المدرسة: " + sch + "\n" +
+                                "مستوى الإنجاز الحالي في (" + cfg.name + "): " + lvl + " من " + cfg.maxLevels + " (" + pct + "%).\n" +
+                                statusMsg;
+
+                    const displayPh = (rawPh.length === 10 && rawPh.startsWith('1')) ? '0' + rawPh : rawPh;
+
+                    waLink = '<a href="https://wa.me/' + cleanPh + '?text=' + encodeURIComponent(msg) + '" target="_blank" ' +
+                             'style="background:#25D366; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">' +
+                             displayPh + ' 💬</a>';
+                }
+
+                tbody.innerHTML += '<tr>' +
+                    '<td style="font-weight:bold; color:#1e3a8a;">' + (index + 1) + '</td>' +
+                    '<td>' + imgLink + '</td>' +
+                    '<td>' + name + '</td>' +
+                    '<td>' + code + '</td>' +
+                    '<td>' + waLink + '</td>' +
+                    '<td>' + lvl + '/' + cfg.maxLevels + '</td>' +
+                    '<td><div class="bar"><div class="fill" style="width:' + pct + '%">' + pct + '%</div></div></td>' +
+                    '<td style="font-size:11px; color:#475569; direction:ltr;">' + updated + '</td>' +
+                '</tr>';
+            });
+        }
+
+        // ==========================================
+        // دالة حساب وعرض إحصائية المدرسة للتبويب الحالي
+        // ==========================================
+        function updateSchoolStatsPanel(schoolStudents, totalSchoolCount, maxLevels) {
+            const panel = document.getElementById("school-stats-panel");
+            if (!panel) return;
+
+            const halfLevel = Math.ceil(maxLevels / 2); // 50% من المستويات (21 من 42، أو 3 من 6)
+            
+            const registeredCount = schoolStudents.length;
+            const totalCount = Number(totalSchoolCount) > 0 ? Number(totalSchoolCount) : registeredCount;
+            const unregisteredCount = Math.max(0, totalCount - registeredCount);
+
+            let lessThan50 = 0;
+            let achieved50 = 0;
+            let completedAll = 0;
+
+            schoolStudents.forEach(function(st) {
+                const lvl = Number(st.level || st.l || 0);
+                if (lvl >= maxLevels) {
+                    completedAll++;
+                } else if (lvl >= halfLevel) {
+                    achieved50++;
+                } else {
+                    lessThan50++;
+                }
+            });
+
+            panel.innerHTML = 
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #1e3a8a;">' +
+                    '<strong style="font-size:18px; color:#1e3a8a;">' + totalCount + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">إجمالي طلاب المدرسة</span>' +
+                '</div>' +
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #dc2626;">' +
+                    '<strong style="font-size:18px; color:#dc2626;">' + unregisteredCount + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">طلاب لم يسجلوا</span>' +
+                '</div>' +
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #0284c7;">' +
+                    '<strong style="font-size:18px; color:#0284c7;">' + registeredCount + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">عدد الطلاب المسجلين</span>' +
+                '</div>' +
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #f59e0b;">' +
+                    '<strong style="font-size:18px; color:#d97706;">' + lessThan50 + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">أقل من 50% مستويات</span>' +
+                '</div>' +
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #8b5cf6;">' +
+                    '<strong style="font-size:18px; color:#7c3aed;">' + achieved50 + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">أنجزوا 50% فأكثر</span>' +
+                '</div>' +
+                '<div style="background:#fff; padding:10px; border-radius:6px; border-bottom:3px solid #16a34a;">' +
+                    '<strong style="font-size:18px; color:#16a34a;">' + completedAll + '</strong><br>' +
+                    '<span style="font-size:12px; color:#475569; font-weight:bold;">أتموا جميع المستويات</span>' +
+                '</div>';
+        }
+
+
+function toggleStats() {
+const entry = document.getElementById("entry-section");
+const stats = document.getElementById("stats-section");
+const isStatsVisible = stats.style.display === "block";
+stats.style.display = isStatsVisible ? "none" : "block";
+entry.style.display = isStatsVisible ? "block" : "none";
+}
+
+
+        function renderStatsTable() {
+            const cfg = TABS_CONFIG[currentTab];
+            const tbody = document.getElementById("stats-tbody");
+            tbody.innerHTML = "";
+            let idx = 1;
+
+            Object.keys(currentTotals).forEach(sch => {
+                const tot = Number(currentTotals[sch]) || 0;
+                const finished = currentStudents.filter(st => {
+                    const sName = st.school || st.s || st["اسم المدرسة"] || st["المدرسة"] || "";
+                    const lvl = Number(st.level || st.l || st["المستوى"] || 0);
+                    return sName.toString().trim() === sch.trim() && lvl >= cfg.maxLevels;
+                }).length;
+                const pct = tot > 0 ? Math.round((finished / tot) * 100) : 0;
+
+                tbody.innerHTML += '<tr>' +
+                    '<td>' + (idx++) + '</td>' +
+                    '<td style="text-align:right;">' + sch + '</td>' +
+                    '<td>' + tot + '</td>' +
+                    '<td>' + finished + '</td>' +
+                    '<td><div class="bar"><div class="fill" style="width:' + pct + '%">' + pct + '%</div></div></td>' +
+                '</tr>';
+            });
+        }
+
+// دوال النافذة المنبثقة لتغيير كلمة المرور
+function openPasswordModal() {
+document.getElementById("modal-school-name").innerText = sessionStorage.getItem("loggedSchool");
+document.getElementById("password-modal").style.display = "flex";
+}
+function closePasswordModal() {
+document.getElementById("password-modal").style.display = "none";
+}
+function submitPasswordChange(e) {
+e.preventDefault();
+const oldPassword = document.getElementById("old-password").value.trim();
+const newPassword = document.getElementById("new-password").value.trim();
+const confirmPassword = document.getElementById("confirm-password").value.trim();
+const msg = document.getElementById("pass-msg");
+if (newPassword !== confirmPassword) {
+msg.style.color = "#dc2626"; msg.innerText = "كلمة المرور غير متطابقة!"; msg.style.display = "block"; return;
+}
+const fd = new URLSearchParams({
+action: "changePassword",
+username: sessionStorage.getItem("loggedSchool"),
+oldPassword, newPassword
+});
+fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
+.then(r => r.json())
+.then(res => {
+msg.style.display = "block";
+msg.style.color = res.success ? "#16a34a" : "#dc2626";
+msg.innerText = res.message;
+if (res.success) setTimeout(closePasswordModal, 1500);
+});
+}
+        // ==========================================
+        // 4. حفظ وتحديث البيانات ورفع الصورة
+        // ==========================================
+        async function saveStudentData(e) {
+            e.preventDefault();
+            const cfg = TABS_CONFIG[currentTab];
+            const btn = document.getElementById("saveBtn");
+            const code = document.getElementById("stCode").value.trim();
+            const name = document.getElementById("stName").value.trim();
+            const phone = document.getElementById("stPhone").value.trim();
+            const lvl = document.getElementById("stLvl").value;
+            const imgInput = document.getElementById("stImg");
+            const imgFile = (imgInput.files && imgInput.files.length > 0) ? imgInput.files.item(0) : null;
+
+            btn.disabled = true;
+            btn.innerText = "جاري الحفظ والرفع...";
+
+            let base64Img = "";
+            if (imgFile) {
+                base64Img = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(imgFile);
+                });
+            }
+
+            const payload = {
+                action: "saveStudent",
+                school: activeSchool,
+                code: code,
+                name: name,
+                phone: phone,
+                level: lvl,
+                maxLevels: cfg.maxLevels,
+                image: base64Img
+            };
+
+            try {
+                await fetch(cfg.sheetUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                
+                alert("تم إرسال البيانات والحفظ بنجاح!");
+                document.getElementById("unifiedForm").reset();
+                document.getElementById("stName").style.backgroundColor = "#ffffff";
+                document.getElementById("stPhone").style.backgroundColor = "#ffffff";
+
+                // انتظار ثانيتين ثم تحديث الجدول لعرض البيانات الجديدة
+                setTimeout(() => {
+                    fetchTabData();
+                }, 2000);
+            } catch (err) {
+                console.error(err);
+                alert("حدث خطأ أثناء الحفظ، تأكد من الاتصال بالإنترنت.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "حفظ وتحديث في جوجل شيت ودرايف";
+            }
+        }
+
+        // ==========================================
+        // 5. تهنئة أوائل المستوى النهائي
+        // ==========================================
+function openCongrats() {
+    const cfg = TABS_CONFIG[currentTab];
+    const topStudents = currentStudents.filter(st => {
+        const sName = (st.school || st.s || "").toString().trim();
+        const lvl = Number(st.level || st.l || 0);
+        return sName === activeSchool.trim() && lvl >= cfg.maxLevels;
+    });
+
+    if (topStudents.length === 0) {
+        return alert("لا يوجد طلاب أتموا " + cfg.maxLevels + " مستوى في هذه المدرسة حتى الآن.");
+    }
+
+    // إنشاء نافذة منبثقة تعرض أوائل الطلاب مع زر واتساب لكل طالب
+    let modal = document.getElementById("congrats-modal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "congrats-modal";
+        modal.className = "modal-overlay";
+        document.body.appendChild(modal);
+    }
+
+    let listHtml = '<div class="modal-box" style="max-width:480px; max-height:80vh; overflow-y:auto;">' +
+        '<h3 style="color:#16a34a; margin-top:0;">🎉 تهنئة أوائل ' + cfg.maxLevels + ' مستوى</h3>' +
+        '<p style="font-size:13px; color:#475569;">' + activeSchool + '</p>' +
+        '<table style="width:100%; margin-top:10px;"><thead><tr><th>الطالب</th><th>إرسال تهنئة واتساب</th></tr></thead><tbody>';
+
+    topStudents.forEach(st => {
+        const name = st.name || st.n || "";
+        const phone = (st.phone || st.ph || "").toString().trim().replace(/^0+/, '');
+        const msg = "🎉 *تهنئة إدارة شرق المنصورة التعليمية - توجيه الحاسب الآلي* 🎉\n" +
+                    "نتقدم بخالص التهنئة للطالب/ة المتفوق/ة: *" + name + "*\n" +
+                    "بمدرسة: *" + activeSchool + "*\n" +
+                    "لإتمامه بنجاح (" + cfg.maxLevels + " من " + cfg.maxLevels + ") مستوى في *" + cfg.name + "* 🌟👏";
+        
+        const btnHtml = phone 
+            ? '<a href="https://wa.me/' + phone + '?text=' + encodeURIComponent(msg) + '" target="_blank" style="background:#25D366; color:#fff; padding:5px 10px; border-radius:5px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">إرسال تهنئة 📱</a>'
+            : '<span style="color:#94a3b8; font-size:12px;">لا يوجد رقم</span>';
+
+        listHtml += '<tr><td style="text-align:right;">' + name + '</td><td>' + btnHtml + '</td></tr>';
+    });
+
+    listHtml += '</tbody></table>' +
+        '<button type="button" class="cancel-btn" style="margin-top:15px;" onclick="document.getElementById(\'congrats-modal\').style.display=\'none\'">إغلاق</button>' +
+        '</div>';
+
+    modal.innerHTML = listHtml;
+    modal.style.display = "flex";
+}
+        // ==========================================
+        // 6. البحث التلقائي بكود الطالب وجلب بياناته
+        // ==========================================
+        document.getElementById("stCode").addEventListener("input", function() {
+            // السماح بالأرقام فقط ومنع الحروف
+            this.value = this.value.replace(/\D/g, '');
+            const enteredCode = this.value.trim();
+
+            const nameInput = document.getElementById("stName");
+            const phoneInput = document.getElementById("stPhone");
+            const lvlSelect = document.getElementById("stLvl");
+
+            if (!enteredCode) return;
+
+            // البحث عن الطالب في بيانات التبويب الحالي (ضمن نفس المدرسة)
+            const existingStudent = currentStudents.find(function(st) {
+                const stCode = (st.code || st.c || "").toString().trim();
+                const stSchool = (st.school || st.s || "").toString().trim();
+                return stCode === enteredCode && stSchool === activeSchool.trim();
+            });
+
+            if (existingStudent) {
+                // تعبئة الاسم ورقم التواصل والمستوى تلقائياً
+                nameInput.value = existingStudent.name || existingStudent.n || "";
+                
+                let rawPh = (existingStudent.phone || existingStudent.ph || "").toString().trim();
+                // إعادة الصفر في البداية إذا كان محذوفاً من الشيت
+                if (rawPh.length === 10 && rawPh.startsWith("1")) {
+                    rawPh = "0" + rawPh;
+                }
+                phoneInput.value = rawPh;
+
+                const savedLvl = (existingStudent.level !== undefined) ? existingStudent.level : existingStudent.l;
+                if (savedLvl !== undefined && savedLvl !== null) {
+                    lvlSelect.value = savedLvl.toString();
+                }
+
+                // تمييز الحقول بلون أخضر فاتح للدلالة على أنه طالب مسجل مسبقاً
+                nameInput.style.backgroundColor = "#dcfce7";
+                phoneInput.style.backgroundColor = "#dcfce7";
+            } else {
+                // إعادة لون الخلفية الطبيعي إذا كان الكود لطالب جديد
+                nameInput.style.backgroundColor = "#ffffff";
+                phoneInput.style.backgroundColor = "#ffffff";
+            }
+        });
+
+        // السماح بالأرقام فقط في حقل رقم التواصل أيضاً
+        document.getElementById("stPhone").addEventListener("input", function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+
+                // ==========================================
+        // 7. دالة البحث السريع في جدول الطلاب
+        // ==========================================
+        function filterStudentsTable() {
+            const query = document.getElementById("quick-search").value.toLowerCase().trim();
+            const rows = document.querySelectorAll("#students-tbody tr");
+
+            rows.forEach(function(row) {
+                // قراءة نص الصف بالكامل (الاسم، الكود، الهاتف، المستوى)
+                const rowText = row.textContent.toLowerCase();
+                if (rowText.indexOf(query) > -1) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+        // ==========================================
+        // 8. التبويب الرابع: تقارير وإحصائيات جميع المدارس
+        // ==========================================
+        let currentReportRows = []; // لحفظ بيانات التقرير لتصديرها إلى Excel
+
+        function openReportsTab(btnElement) {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            if (btnElement) btnElement.classList.add("active");
+
+            document.getElementById("entry-section").style.display = "none";
+            document.getElementById("admin-school-bar").style.display = "none"; // ✅ أضف هذا السطر هنا
+            document.getElementById("reports-section").style.display = "block";
+
+            const selectedSub = document.getElementById("report-subject-select").value;
+            loadComprehensiveReport(selectedSub);
+        }
+
+        async function loadComprehensiveReport(tabKey) {
+            const cfg = TABS_CONFIG[tabKey];
+            const loader = document.getElementById("loader");
+            const tbody = document.getElementById("report-tbody");
+            const summaryDiv = document.getElementById("report-summary-cards");
+
+            if (loader) loader.style.display = "block";
+            tbody.innerHTML = '<tr><td colspan="9" style="padding:20px; color:#64748b;">جاري تجميع إحصائيات المدارس من جوجل شيت...</td></tr>';
+
+            try {
+                const res = await fetch(cfg.sheetUrl + "?token=Mansoura_Admin_2026");
+                const json = await res.json();
+                const students = Array.isArray(json) ? json : (json.students || []);
+                const halfLevel = Math.ceil(cfg.maxLevels / 2);
+
+                const schoolNames = Object.keys(allSchoolsDetails).filter(s => s.trim() !== "توجيه الحاسب الآلي");
+                
+                let gTotal = 0, gUnreg = 0, gReg = 0, gLess50 = 0, gOver50 = 0, gDone = 0;
+                currentReportRows = [];
+
+                schoolNames.forEach(function(sch) {
+                    const cleanSch = sch.trim();
+                    const info = (allSchoolsDetails[cleanSch] && allSchoolsDetails[cleanSch][tabKey]) ? allSchoolsDetails[cleanSch][tabKey] : {};
+                    const schStudents = students.filter(st => (st.school || st.s || "").toString().trim() === cleanSch);
+
+                    const reg = schStudents.length;
+                    const tot = Number(info.total) > 0 ? Number(info.total) : reg;
+                    const unreg = Math.max(0, tot - reg);
+
+                    let less50 = 0, over50 = 0, done = 0;
+                    schStudents.forEach(st => {
+                        const lvl = Number(st.level || st.l || 0);
+                        if (lvl >= cfg.maxLevels) done++;
+                        else if (lvl >= halfLevel) over50++;
+                        else less50++;
+                    });
+
+                    const completionPct = tot > 0 ? Math.min(100, Math.round((done / tot) * 100)) : 0;
+
+                    gTotal += tot; gUnreg += unreg; gReg += reg;
+                    gLess50 += less50; gOver50 += over50; gDone += done;
+
+                    currentReportRows.push({
+                        school: cleanSch, total: tot, unreg: unreg, reg: reg,
+                        less50: less50, over50: over50, done: done, pct: completionPct
+                    });
+                });
+
+                // ترتيب المدارس تنازلياً حسب نسبة الإتمام ثم عدد الطلاب المتمين
+                currentReportRows.sort((a, b) => (b.pct - a.pct) || (b.done - a.done));
+
+                // عرض بطاقات ملخص الإدارة
+                summaryDiv.innerHTML = 
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#1e3a8a; font-size:18px;">' + gTotal + '</strong><br><span style="font-size:12px;">إجمالي طلاب الإدارة</span></div>' +
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#dc2626; font-size:18px;">' + gUnreg + '</strong><br><span style="font-size:12px;">لم يسجلوا</span></div>' +
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#0284c7; font-size:18px;">' + gReg + '</strong><br><span style="font-size:12px;">المسجلون بالمنصة</span></div>' +
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#d97706; font-size:18px;">' + gLess50 + '</strong><br><span style="font-size:12px;">أقل من 50%</span></div>' +
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#7c3aed; font-size:18px;">' + gOver50 + '</strong><br><span style="font-size:12px;">أنجزوا 50% فأكثر</span></div>' +
+                    '<div style="background:#fff; padding:10px; border-radius:6px;"><strong style="color:#16a34a; font-size:18px;">' + gDone + '</strong><br><span style="font-size:12px;">أتموا 100%</span></div>';
+
+                // عرض جدول المدارس
+                tbody.innerHTML = "";
+                currentReportRows.forEach(function(r, idx) {
+                    const barColor = r.pct >= 75 ? "#16a34a" : (r.pct >= 40 ? "#2980b9" : "#e67e22");
+                    tbody.innerHTML += '<tr>' +
+                        '<td style="font-weight:bold;">' + (idx + 1) + '</td>' +
+                        '<td style="text-align:right; font-weight:bold;">' + r.school + '</td>' +
+                        '<td>' + r.total + '</td>' +
+                        '<td style="color:#dc2626;">' + r.unreg + '</td>' +
+                        '<td>' + r.reg + '</td>' +
+                        '<td>' + r.less50 + '</td>' +
+                        '<td>' + r.over50 + '</td>' +
+                        '<td style="font-weight:bold; color:#16a34a;">' + r.done + '</td>' +
+                        '<td><div class="bar"><div class="fill" style="width:' + r.pct + '%; background:' + barColor + ';">' + r.pct + '%</div></div></td>' +
+                    '</tr>';
+                });
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="9" style="color:#dc2626; padding:15px;">تعذر تحميل بيانات هذه المادة، تأكد من وضع رابط الشيت الصحيح في الإعدادات.</td></tr>';
+            } finally {
+                if (loader) loader.style.display = "none";
+            }
+        }
+
+        // تصدير التقرير المعروض إلى ملف Excel (CSV) يدعم اللغة العربية
+        function exportReportToCSV() {
+            if (currentReportRows.length === 0) return alert("لا توجد بيانات لتصديرها!");
+            
+            const subSelect = document.getElementById("report-subject-select");
+            const subTitle = subSelect.options[subSelect.selectedIndex].text;
+            
+            let csv = "\uFEFF"; // ترميز UTF-8 لدعم العربية في Excel
+            csv += "م,اسم المدرسة,إجمالي الطلاب,طلاب لم يسجلوا,المسجلون,أقل من 50%,أنجزوا 50% فأكثر,أتموا 100%,نسبة الإتمام\n";
+            
+            currentReportRows.forEach(function(r, idx) {
+                csv += (idx + 1) + ',"' + r.school + '",' + r.total + ',' + r.unreg + ',' + r.reg + ',' + r.less50 + ',' + r.over50 + ',' + r.done + ',' + r.pct + '%\n';
+            });
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "تقرير_" + subTitle.replace(/\s+/g, "_") + ".csv";
+            link.click();
+        }
+
+
+    </script>
+</body>
+</html>

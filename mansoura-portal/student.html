@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة تسجيل إنجاز الطلاب - إدارة شرق المنصورة التعليمية</title>
+    <style>
+        body { font-family: Tahoma, 'Segoe UI', sans-serif; margin: 0; padding: 15px; background: linear-gradient(135deg, #eef2f5, #dbeafe); min-height: 100vh; }
+        .container { max-width: 520px; margin: 15px auto; background: #ffffff; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background-color: #1e3a8a; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #f59e0b; }
+        .header h1 { margin: 0; font-size: 1.2rem; line-height: 1.6; }
+        .header p { margin: 5px 0 0; font-size: 0.85rem; color: #cbd5e1; }
+        .form-body { padding: 25px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; color: #1e293b; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 15px; transition: border 0.3s; }
+        input:focus, select:focus { border-color: #2563eb; outline: none; }
+        .hint { font-size: 12px; color: #64748b; margin-top: 4px; display: block; }
+        .btn-submit { width: 100%; padding: 14px; background-color: #16a34a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+        .btn-submit:hover { background-color: #15803d; }
+        .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        #status-msg { display: none; padding: 14px; border-radius: 8px; margin-top: 15px; text-align: center; font-weight: bold; font-size: 14px; }
+        #loader { text-align: center; color: #d97706; font-weight: bold; font-size: 13px; margin-bottom: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>إدارة شرق المنصورة التعليمية<br>توجيه الحاسب الآلي</h1>
+        <p>استمارة تسجيل وتحديث إنجاز الطلاب - تصميم أ/ محمد ابراهيم</p>
+    </div>
+
+    <div class="form-body">
+        <div id="loader">جاري تحميل قائمة المدارس والبيانات...</div>
+
+        <form id="studentSelfForm" onsubmit="submitStudentSelf(event)">
+            <!-- 1. اختيار الصف / المادة -->
+            <div class="input-group">
+                <label for="stu-grade">الصف الدراسي / المنصة:</label>
+                <select id="stu-grade" onchange="onGradeChange()" required>
+                    <option value="g1">الصف الأول الثانوي - منصة البرمجة (كيريو 42 مستوى)</option>
+                    <option value="g2_finance">الصف الثاني الثانوي - منصة الثقافة المالية (6 مستويات)</option>
+                    <option value="g2_bac">الصف الثاني الثانوي بكالوريا - منصة البرمجة (كيريو 42 مستوى)</option>
+                </select>
+            </div>
+
+            <!-- 2. اختيار المدرسة -->
+            <div class="input-group">
+                <label for="stu-school">اختر المدرسة:</label>
+                <select id="stu-school" onchange="checkExistingStudent()" required disabled>
+                    <option value="">جاري تحميل المدارس...</option>
+                </select>
+            </div>
+
+            <!-- 3. كود الطالب -->
+            <div class="input-group">
+                <label for="stu-code">كود الطالب (أرقام فقط):</label>
+                <input type="text" id="stu-code" inputmode="numeric" placeholder="أدخل كود الطالب" oninput="onCodeInput(this)" required>
+                <span id="code-hint" class="hint">إذا كنت مسجلاً من قبل، ستظهر بياناتك تلقائياً لتحديث المستوى.</span>
+            </div>
+
+            <!-- 4. اسم الطالب -->
+            <div class="input-group">
+                <label for="stu-name">اسم الطالب رباعياً:</label>
+                <input type="text" id="stu-name" placeholder="اكتب اسمك بالكامل" required>
+            </div>
+
+            <!-- 5. رقم التواصل -->
+            <div class="input-group">
+                <label for="stu-phone">رقم التواصل (واتساب):</label>
+                <input type="tel" id="stu-phone" inputmode="numeric" maxlength="11" placeholder="010xxxxxxxx" oninput="this.value = this.value.replace(/\D/g, '')" required>
+            </div>
+
+            <!-- 6. اختيار المستوى -->
+            <div class="input-group">
+                <label id="stu-lvl-label" for="stu-level">المستوى الذي وصلت إليه:</label>
+                <select id="stu-level" required></select>
+            </div>
+
+            <!-- 7. رفع صورة الإنجاز -->
+            <div class="input-group">
+                <label for="stu-img">صورة شاشة الإنجاز من المنصة:</label>
+                <input type="file" id="stu-img" accept="image/*" required>
+                <span class="hint">يُرجى رفع لقطة شاشة واضحة توضح الكود والمستوى الذي أتممته.</span>
+            </div>
+
+            <button type="submit" id="stu-submit-btn" class="btn-submit">إرسال وحفظ البيانات 🚀</button>
+        </form>
+
+        <div id="status-msg"></div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // إعدادات الروابط (نفس الروابط المستخدمة في البوابة الرئيسية)
+    // ==========================================
+    const LOGIN_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2_O-H9jMUzU5-3h6EdU7kyak_ELi1c3NqgA5giQPo7McjpNsLHo1mHLhV3anJDKUdWA/exec";
+
+    const TABS_CONFIG = {
+        g1: {
+            maxLevels: 42,
+            sheetUrl: "https://script.google.com/macros/s/AKfycbwDbq-O9mCA-1l2aD0JMNNmBEiTeKYs5IpndLLzHxEuzDJOj64MLSOFPosnzT1xELDFQg/exec"
+        },
+        g2_finance: {
+            maxLevels: 6,
+            sheetUrl: "https://script.google.com/macros/s/AKfycbymb3Os_OKBJUAItaYk8L339gGY8qG9_6naVDId8ZMWLIcWKCnV0THJP62-WCCGb0TfSw/exec"
+        },
+        g2_bac: {
+            maxLevels: 49,
+            sheetUrl: "https://script.google.com/macros/s/AKfycbwuo9mX4I2AE1H1uFHNflwiyt11Gps9ijn5WkyFW6duSaQ03sk6upXCHtOvTDXCKgnpbw/exec"
+        }
+    };
+
+    let cachedStudents = [];
+
+    window.onload = function() {
+        loadSchoolsList();
+        onGradeChange();
+    };
+
+    // 1. جلب قائمة المدارس من شيت LoginPage_0
+    function loadSchoolsList() {
+        const sel = document.getElementById("stu-school");
+        const loader = document.getElementById("loader");
+        loader.style.display = "block";
+
+        fetch(LOGIN_SCRIPT_URL)
+            .then(r => r.json())
+            .then(data => {
+                const schools = Array.isArray(data) ? data : (data.schools || []);
+                sel.innerHTML = '<option value="" disabled selected>-- اختر مدرستك من القائمة --</option>';
+                schools.forEach(s => {
+                    if (s.trim() !== "" && s.trim() !== "توجيه الحاسب الآلي") {
+                        sel.add(new Option(s.trim(), s.trim()));
+                    }
+                });
+                sel.disabled = false;
+            })
+            .catch(() => {
+                sel.innerHTML = '<option value="">تعذر تحميل المدارس، أعد تحديث الصفحة</option>';
+            })
+            .finally(() => {
+                loader.style.display = "none";
+            });
+    }
+
+    // 2. تغيير المستويات وجلب الطلاب للبحث التلقائي عند تغيير الصف
+function onGradeChange() {
+    const gradeKey = document.getElementById("stu-grade").value;
+    const cfg = TABS_CONFIG[gradeKey];
+    const lSel = document.getElementById("stu-level");
+
+    document.getElementById("stu-lvl-label").innerText = "المستوى الذي وصلت إليه (من " + cfg.maxLevels + "):";
+    lSel.innerHTML = "";
+
+    const defOpt = document.createElement("option");
+    defOpt.value = "";
+    defOpt.text = "-- اختر المستوى --";
+    defOpt.disabled = true;
+    defOpt.selected = true;
+    lSel.appendChild(defOpt);
+
+    for (let i = 0; i <= cfg.maxLevels; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.text = (i === 0) ? "0 - لم أبدأ بعد" : "المستوى " + i + " من " + cfg.maxLevels;
+        lSel.appendChild(opt);
+    }
+}
+
+    // 3. منع الحروف في الكود والبحث التلقائي
+        function onCodeInput(inputEl) {
+            inputEl.value = inputEl.value.replace(/\D/g, '');
+        }
+
+    function checkExistingStudent() {
+        const school = document.getElementById("stu-school").value.trim();
+        const code = document.getElementById("stu-code").value.trim();
+        const nameInput = document.getElementById("stu-name");
+        const phoneInput = document.getElementById("stu-phone");
+        const lvlSelect = document.getElementById("stu-level");
+        const hint = document.getElementById("code-hint");
+
+        if (!school || !code) return;
+
+        const found = cachedStudents.find(st => 
+            (st.school || st.s || "").toString().trim() === school &&
+            (st.code || st.c || "").toString().trim() === code
+        );
+
+        if (found) {
+            nameInput.value = found.name || found.n || "";
+            let ph = (found.phone || found.ph || "").toString().trim();
+            if (ph.length === 10 && ph.startsWith("1")) ph = "0" + ph;
+            phoneInput.value = ph;
+
+            const savedLvl = (found.level !== undefined) ? found.level : found.l;
+            if (savedLvl !== undefined) lvlSelect.value = savedLvl.toString();
+
+            nameInput.style.backgroundColor = "#dcfce7";
+            hint.style.color = "#16a34a";
+            hint.innerText = "✅ تم العثور على بياناتك المسجلة مسبقاً، اختر المستوى الجديد وارفع الصورة.";
+        } else {
+            nameInput.style.backgroundColor = "#ffffff";
+            hint.style.color = "#64748b";
+            hint.innerText = "إذا كنت مسجلاً من قبل، ستظهر بياناتك تلقائياً لتحديث المستوى.";
+        }
+    }
+
+// 4. إرسال وحفظ بيانات الطالب والصورة
+async function submitStudentSelf(e) {
+e.preventDefault();
+const gradeKey = document.getElementById("stu-grade").value;
+const cfg = TABS_CONFIG[gradeKey];
+const btn = document.getElementById("stu-submit-btn");
+const msgBox = document.getElementById("status-msg");
+const school = document.getElementById("stu-school").value.trim();
+const code = document.getElementById("stu-code").value.trim();
+const name = document.getElementById("stu-name").value.trim();
+const phone = document.getElementById("stu-phone").value.trim();
+const level = document.getElementById("stu-level").value;
+const imgInput = document.getElementById("stu-img");
+const imgFile = (imgInput.files && imgInput.files.length > 0) ? imgInput.files.item(0) : null;
+if (phone.length !== 11 || !phone.startsWith("01")) {
+alert("يرجى إدخال رقم موبايل صحيح مكون من 11 رقماً ويبدأ بـ 01");
+return;
+}
+btn.disabled = true;
+btn.innerText = "جاري رفع الصورة وحفظ البيانات... ⏳";
+msgBox.style.display = "none";
+let base64Img = "";
+if (imgFile) {
+base64Img = await new Promise((resolve) => {
+const reader = new FileReader();
+reader.onload = () => resolve(reader.result);
+reader.readAsDataURL(imgFile);
+});
+}
+const payload = {
+action: "saveStudent",
+school: school,
+code: code,
+name: name,
+phone: phone,
+level: level,
+maxLevels: cfg.maxLevels,
+image: base64Img
+};
+try {
+await fetch(cfg.sheetUrl, {
+method: "POST",
+mode: "no-cors",
+headers: { "Content-Type": "text/plain;charset=utf-8" },
+body: JSON.stringify(payload)
+});
+msgBox.style.display = "block";
+msgBox.style.backgroundColor = "#dcfce7";
+msgBox.style.color = "#166534";
+msgBox.innerText = "🎉 تم حفظ بياناتك وصورة الإنجاز بنجاح! شكراً لك يا " + name;
+document.getElementById("studentSelfForm").reset();
+document.getElementById("stu-name").style.backgroundColor = "#ffffff";
+onGradeChange();
+} catch (err) {
+msgBox.style.display = "block";
+msgBox.style.backgroundColor = "#fee2e2";
+msgBox.style.color = "#991b1b";
+msgBox.innerText = "❌ حدث خطأ أثناء الإرسال، تأكد من اتصال الإنترنت وحاول مرة أخرى.";
+} finally {
+btn.disabled = false;
+btn.innerText = "إرسال وحفظ البيانات 🚀";
+}
+}
+</script>
+</body>
+</html>
