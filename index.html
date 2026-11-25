@@ -918,36 +918,122 @@ entry.style.display = isStatsVisible ? "block" : "none";
 
 // دوال النافذة المنبثقة لتغيير كلمة المرور
 function openPasswordModal() {
-document.getElementById("modal-school-name").innerText = sessionStorage.getItem("loggedSchool");
-document.getElementById("password-modal").style.display = "flex";
+    const modal = document.getElementById("password-modal");
+    
+    // إذا كانت النافذة المنبثقة موجودة في HTML افتحها
+    if (modal) {
+        const schoolSpan = document.getElementById("modal-school-name");
+        if (schoolSpan) schoolSpan.innerText = sessionStorage.getItem("loggedSchool") || activeSchool;
+        modal.style.display = "flex";
+        return;
+    }
+
+    // وإذا كانت محذوفة من HTML، استخدم نوافذ الإدخال المباشرة فوراً
+    const currentUser = (sessionStorage.getItem("loggedSchool") || activeSchool || "").trim();
+    if (!currentUser || currentUser === "ALL") {
+        return alert("يرجى تسجيل الدخول بحساب المدرسة أولاً.");
+    }
+
+    const oldPassword = prompt("أدخل كلمة المرور الحالية لحساب (" + currentUser + "):");
+    if (!oldPassword) return;
+
+    const newPassword = prompt("أدخل كلمة المرور الجديدة:");
+    if (!newPassword) return;
+
+    const confirmPassword = prompt("أعد كتابة كلمة المرور الجديدة للتأكيد:");
+    if (newPassword !== confirmPassword) {
+        return alert("❌ كلمة المرور الجديدة غير متطابقة!");
+    }
+
+    const loader = document.getElementById("loader");
+    if (loader) loader.style.display = "block";
+
+    const fd = new URLSearchParams({
+        action: "changePassword",
+        username: currentUser,
+        oldPassword: oldPassword.trim(),
+        newPassword: newPassword.trim()
+    });
+
+    fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert("✅ " + (res.message || "تم تغيير كلمة المرور بنجاح!"));
+            } else {
+                alert("❌ " + (res.message || "كلمة المرور الحالية غير صحيحة!"));
+            }
+        })
+        .catch(() => {
+            alert("❌ حدث خطأ في الاتصال بالسيرفر، تأكد من اتصال الإنترنت.");
+        })
+        .finally(() => {
+            if (loader) loader.style.display = "none";
+        });
 }
 function closePasswordModal() {
 document.getElementById("password-modal").style.display = "none";
 }
 function submitPasswordChange(e) {
-e.preventDefault();
-const oldPassword = document.getElementById("old-password").value.trim();
-const newPassword = document.getElementById("new-password").value.trim();
-const confirmPassword = document.getElementById("confirm-password").value.trim();
-const msg = document.getElementById("pass-msg");
-if (newPassword !== confirmPassword) {
-msg.style.color = "#dc2626"; msg.innerText = "كلمة المرور غير متطابقة!"; msg.style.display = "block"; return;
+    e.preventDefault();
+    const oldPassword = document.getElementById("old-password").value.trim();
+    const newPassword = document.getElementById("new-password").value.trim();
+    const confirmPassword = document.getElementById("confirm-password").value.trim();
+    const msg = document.getElementById("pass-msg");
+    const currentUser = (sessionStorage.getItem("loggedSchool") || activeSchool || "").trim();
+
+    if (!currentUser || currentUser === "ALL") {
+        msg.style.color = "#dc2626";
+        msg.innerText = "يرجى تسجيل الدخول بحساب المدرسة أولاً";
+        msg.style.display = "block";
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        msg.style.color = "#dc2626";
+        msg.innerText = "كلمة المرور غير متطابقة";
+        msg.style.display = "block";
+        return;
+    }
+
+    msg.style.color = "#d97706";
+    msg.innerText = "جاري حفظ كلمة المرور الجديدة...";
+    msg.style.display = "block";
+
+    const fd = new URLSearchParams({
+        action: "changePassword",
+        username: currentUser,
+        oldPassword: oldPassword,
+        newPassword: newPassword
+    });
+
+    fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                msg.style.color = "#16a34a";
+                msg.innerText = "✅ " + (res.message || "تم تغيير كلمة المرور بنجاح!");
+                setTimeout(() => {
+                    closePasswordModal();
+                    document.getElementById("old-password").value = "";
+                    document.getElementById("new-password").value = "";
+                    document.getElementById("confirm-password").value = "";
+                    msg.style.display = "none";
+                }, 1500);
+            } else {
+                msg.style.color = "#dc2626";
+                msg.innerText = "❌ " + (res.message || "كلمة المرور الحالية غير صحيحة!");
+            }
+        })
+        .catch(() => {
+            msg.style.color = "#dc2626";
+            msg.innerText = "❌ حدث خطأ في الاتصال بالسيرفر، حاول مرة أخرى.";
+        });
 }
-const fd = new URLSearchParams({
-action: "changePassword",
-username: sessionStorage.getItem("loggedSchool"),
-oldPassword, newPassword
-});
-fetch(LOGIN_SCRIPT_URL, { method: "POST", body: fd })
-.then(r => r.json())
-.then(res => {
-msg.style.display = "block";
-msg.style.color = res.success ? "#16a34a" : "#dc2626";
-msg.innerText = res.message;
-if (res.success) setTimeout(closePasswordModal, 1500);
-});
-}
-        // ==========================================
+
+
+
+// ==========================================
         // 4. حفظ وتحديث البيانات ورفع الصورة
         // ==========================================
         async function saveStudentData(e) {
