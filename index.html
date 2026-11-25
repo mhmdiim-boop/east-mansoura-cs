@@ -209,12 +209,23 @@
 
             <!-- نموذج الإدخال الموحد -->
             <div id="entry-section">
-                            <div class="top-bar">
-                <strong id="board-title" style="color:#1a5276; font-size:15px;"></strong>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button type="button" class="btn-sm" style="background:#c0392b" onclick="window.print()">تصدير PDF</button>
-                    <button type="button" id="congrats-btn" class="btn-sm" style="background:#2d3cc0" onclick="openCongrats()">تهنئة الأوائل</button>
-                </div>
+<div class="top-bar">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <strong id="board-title" style="color:#1a5276; font-size:15px;"></strong>
+        
+        <!-- شارة بيانات المعلم والتواصل (تظهر للتوجيه فقط عند اختيار مدرسة) -->
+        <div id="admin-topbar-teacher" style="display:none; align-items:center; gap:8px; background:#eff6ff; border:1px solid #bfdbfe; padding:5px 10px; border-radius:6px;">
+            <span style="font-size:13px; color:#1e3a8a; font-weight:bold;">المعلم: <span id="topbar-teacher-name">-</span></span>
+            <a id="topbar-call-btn" href="#" style="background:#0284c7; color:#fff; padding:4px 10px; border-radius:5px; text-decoration:none; font-size:12px; font-weight:bold;">اتصال 📞</a>
+            <a id="topbar-wa-btn" href="#" target="_blank" style="background:#25D366; color:#fff; padding:4px 10px; border-radius:5px; text-decoration:none; font-size:12px; font-weight:bold;">واتساب 💬</a>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button type="button" class="btn-sm" style="background:#c0392b" onclick="window.print()">تصدير PDF</button>
+        <button type="button" id="congrats-btn" class="btn-sm" style="background:#25D366" onclick="openCongrats()">تهنئة الأوائل</button>
+    </div>
+</div>
             </div>
 
                 <!-- القسم الأول: بيانات المدرسة والمعلم -->
@@ -440,92 +451,59 @@ if (activeSchool) {
 }
 
 // 2. دالة تعبئة بيانات المعلم وعدد الطلاب حسب التبويب والمدرسة
-function populateSchoolInfoFields() {
-    const sch = activeSchool.trim();
-    document.getElementById("info-school-name").value = sch;
+function updateTeacherContactButtons() {
+    const topbarTeacherBox = document.getElementById("admin-topbar-teacher");
+    if (!topbarTeacherBox) return;
+
+    const sel = document.getElementById("adminSchoolSel");
+    const currentSch = (sel && isAdmin) ? sel.value.trim() : (activeSchool || "").trim();
+
+    if (!isAdmin || !currentSch || currentSch === "ALL") {
+        topbarTeacherBox.style.display = "none";
+        return;
+    }
+
+    topbarTeacherBox.style.display = "flex";
+    const info = (allSchoolsDetails[currentSch] && allSchoolsDetails[currentSch][currentTab]) 
+        ? allSchoolsDetails[currentSch][currentTab] 
+        : {};
     
-    const labels = {
-        g1: { t: "اسم معلم برمجة أولى ثانوي:", c: "عدد طلاب أولى ثانوي برمجة:" },
-        g2_bac: { t: "اسم معلم برمجة ثانية ثانوي:", c: "عدد طلاب ثانية ثانوي برمجة:" },
-        g2_finance: { t: "اسم معلم ثقافة مالية:", c: "عدد طلاب ثانية ثانوي ثقافة مالية:" }
-    };
-    document.getElementById("info-teacher-label").innerText = labels[currentTab].t;
-    document.getElementById("info-total-label").innerText = labels[currentTab].c;
+    const teacherName = (info.teacher || "").trim() || "غير مسجل";
+    const rawPh = (info.phone || "").toString().trim();
+    const subjectName = TABS_CONFIG[currentTab].name;
 
-    const info = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab] : {};
-    document.getElementById("info-teacher-name").value = info.teacher || "";
-    document.getElementById("info-teacher-phone").value = info.phone || "";
-    document.getElementById("info-total-students").value = info.total || "";
-    updateTeacherContactButtons();
+    const nameSpan = document.getElementById("topbar-teacher-name");
+    if (nameSpan) nameSpan.innerText = teacherName;
 
+    const callBtn = document.getElementById("topbar-call-btn");
+    const waBtn = document.getElementById("topbar-wa-btn");
+    if (!callBtn || !waBtn) return;
+
+    let cleanPh = rawPh.replace(/\D/g, '');
+    if (!cleanPh) {
+        callBtn.style.opacity = "0.5";
+        waBtn.style.opacity = "0.5";
+        callBtn.href = "javascript:void(0)";
+        waBtn.href = "javascript:void(0)";
+        return;
+    }
+
+    callBtn.style.opacity = "1";
+    waBtn.style.opacity = "1";
+
+    const dialPh = (cleanPh.length === 10 && cleanPh.startsWith("1")) ? "0" + cleanPh : cleanPh;
+    callBtn.href = "tel:" + dialPh;
+
+    let waPh = cleanPh;
+    if (waPh.startsWith("0")) waPh = "2" + waPh;
+    else if (waPh.length === 10 && waPh.startsWith("1")) waPh = "20" + waPh;
+
+    const msg = "السلام عليكم أ/ " + teacherName + "، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
+                "بخصوص متابعة إنجاز طلاب (" + currentSch + ") في (" + subjectName + ").";
+
+    waBtn.href = "https://wa.me/" + waPh + "?text=" + encodeURIComponent(msg);
 }
 
-        // ==========================================
-        // تحديث أزرار اتصال وواتساب المعلم (للتوجيه فقط)
-        // ==========================================
-        function updateTeacherContactButtons() {
-            const actionsBox = document.getElementById("admin-teacher-actions");
-            const phoneInput = document.getElementById("info-teacher-phone");
-            const labelEl = document.getElementById("teacher-contact-label");
-            if (!actionsBox || !phoneInput) return;
-
-            // في وضع المدارس: إظهار حقل الرقم لتعديله وإخفاء أزرار التوجيه
-            if (!isAdmin) {
-                phoneInput.style.display = "block";
-                actionsBox.style.display = "none";
-                if (labelEl) labelEl.innerText = "رقم موبايل المعلم:";
-                return;
-            }
-
-            // في وضع التوجيه: إخفاء حقل الرقم والاكتفاء بزري الاتصال والواتساب
-            phoneInput.style.display = "none";
-            actionsBox.style.display = "flex";
-            actionsBox.style.width = "100%";
-            if (labelEl) labelEl.innerText = "التواصل مع المعلم:";
-
-            const rawPh = phoneInput.value.trim();
-            const teacherName = document.getElementById("info-teacher-name").value.trim() || "زميلنا العزيز";
-            const schoolName = activeSchool.trim();
-            const subjectName = TABS_CONFIG[currentTab].name;
-
-            const callBtn = document.getElementById("teacher-call-btn");
-            const waBtn = document.getElementById("teacher-wa-btn");
-
-            // جعل الزرين متساويين ويملآن الخانة بالكامل
-            callBtn.style.flex = "1";
-            callBtn.style.textAlign = "center";
-            waBtn.style.flex = "1";
-            waBtn.style.textAlign = "center";
-
-            let cleanPh = rawPh.replace(/\D/g, '');
-            if (!cleanPh) {
-                callBtn.style.opacity = "0.5";
-                waBtn.style.opacity = "0.5";
-                callBtn.href = "javascript:void(0)";
-                waBtn.href = "javascript:void(0)";
-                return;
-            }
-
-            callBtn.style.opacity = "1";
-            waBtn.style.opacity = "1";
-
-            // تجهيز رقم الاتصال بصيغة 010...
-            const dialPh = (cleanPh.length === 10 && cleanPh.startsWith("1")) ? "0" + cleanPh : cleanPh;
-            callBtn.href = "tel:" + dialPh;
-
-            // تجهيز رقم الواتساب بصيغة 2010...
-            let waPh = cleanPh;
-            if (waPh.startsWith("0")) {
-                waPh = "2" + waPh;
-            } else if (waPh.length === 10 && waPh.startsWith("1")) {
-                waPh = "20" + waPh;
-            }
-
-            const msg = "السلام عليكم أ/ " + teacherName + "، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
-                        "بخصوص متابعة إنجاز طلاب (" + schoolName + ") في (" + subjectName + ").";
-
-            waBtn.href = "https://wa.me/" + waPh + "?text=" + encodeURIComponent(msg);
-        }
 
 // 3. دالة حفظ بيانات المدرسة والمعلم في جدول LoginPage_0
 function saveSchoolDetails() {
@@ -622,70 +600,94 @@ location.reload();
 // ==========================================
 
 
-        function switchTab(tabKey, btnElement) {
-            document.getElementById("entry-section").style.display = "block";
-            document.getElementById("reports-section").style.display = "none";
-            if (isAdmin) document.getElementById("admin-school-bar").style.display = "block"; // ✅ أضف هذا السطر هنا
+function switchTab(tabKey, btnElement) {
+    currentTab = tabKey;
 
-            currentTab = tabKey;
-            const cfg = TABS_CONFIG[tabKey];
+    // 1. تفعيل شكل الزر المختار
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    if (btnElement) btnElement.classList.add("active");
 
-            // 1. تحديث شكل أزرار التبويبات
-            document.querySelectorAll(".tab-btn").forEach(function(b) {
-                b.classList.remove("active");
-            });
-            if (btnElement) {
-                btnElement.classList.add("active");
-            }
+    // 2. إخفاء قسم التقارير الشاملة وإظهار قسم المواد
+    const reportsSec = document.getElementById("reports-section");
+    if (reportsSec) reportsSec.style.display = "none";
 
-            // 2. تحديث بيانات المدرسة والمعلم
-            if (typeof populateSchoolInfoFields === "function") {
-                populateSchoolInfoFields();
-            }
+    const entrySec = document.getElementById("entry-section");
+    if (entrySec) {
+        entrySec.style.display = "block";
+        const statsPanel = document.getElementById("school-stats-panel");
+        if (statsPanel) statsPanel.style.display = "grid";
 
-            // 3. تحديث النصوص بأمان
-            var lblEl = document.getElementById("lvl-label");
-            if (lblEl) lblEl.innerText = "المستوى (من " + cfg.maxLevels + "):";
+        const quickSearch = document.getElementById("quick-search");
+        if (quickSearch && quickSearch.parentElement) quickSearch.parentElement.style.display = "block";
 
-            var congEl = document.getElementById("congrats-btn");
-            if (congEl) congEl.innerText = "تهنئة أوائل " + cfg.maxLevels + " مستوى";
-
-            var statColEl = document.getElementById("stat-col-final");
-            if (statColEl) statColEl.innerText = "أتموا " + cfg.maxLevels + " مستوى";
-
-            // 4. تعبئة قائمة المستويات فوراً كقائمة افتراضية
-            var lSel = document.getElementById("stLvl");
-            if (lSel) {
-                lSel.innerHTML = "";
-                var defOpt = document.createElement("option");
-                defOpt.value = "";
-                defOpt.text = "-- اختر المستوى --";
-                defOpt.disabled = true;
-                defOpt.selected = true;
-                lSel.appendChild(defOpt);
-
-                for (var i = 0; i <= cfg.maxLevels; i++) {
-                    var opt = document.createElement("option");
-                    opt.value = i;
-                    opt.text = (i === 0) ? "0 - لم يبدأ" : "المستوى " + i + " من " + cfg.maxLevels;
-                    lSel.appendChild(opt);
-                }
-            }
-
-            // 5. جلب بيانات الطلاب والمستويات من جوجل شيت
-            if (typeof fetchTabData === "function") {
-                fetchTabData();
-            }
-
-            const searchInput = document.getElementById("quick-search");
-            if (searchInput) searchInput.value = "";
-
+        const studentsTable = document.getElementById("students-tbody");
+        if (studentsTable) {
+            const tableWrapper = studentsTable.closest(".table-responsive") || studentsTable.closest("table");
+            if (tableWrapper) tableWrapper.style.display = "block";
         }
+    }
+
+    // 3. ضبط ظهور شريط التوجيه وإخفاء قسمي (أولاً وثانياً) للتوجيه
+    if (isAdmin) {
+        const adminBar = document.getElementById("admin-school-bar");
+        if (adminBar) adminBar.style.display = "block";
+    }
+    if (typeof toggleEntryBoxesVisibility === "function") {
+        toggleEntryBoxesVisibility();
+    }
+
+    // 4. تفريغ مربع البحث السريع وتحديث بيانات المعلم والجدول
+    const searchInput = document.getElementById("quick-search");
+    if (searchInput) searchInput.value = "";
+
+    if (typeof populateSchoolInfoFields === "function") {
+        populateSchoolInfoFields();
+    }
+    if (typeof updateTeacherContactButtons === "function") {
+        updateTeacherContactButtons();
+    }
+
+    // 5. تحديث زر تهنئة الأوائل وجلب بيانات المادة من الشيت
+    const cfg = TABS_CONFIG[currentTab];
+    const congratsBtn = document.getElementById("congrats-btn");
+    if (congratsBtn && cfg) {
+        congratsBtn.innerText = "تهنئة أوائل " + cfg.maxLevels + " مستوى";
+    }
+
+    fetchTabData();
+}
+
+function populateSchoolInfoFields() {
+    if (typeof updateTeacherContactButtons === "function") {
+        updateTeacherContactButtons();
+    }
+    if (!activeSchool || activeSchool === "ALL") return;
+    const sch = activeSchool.trim();
+    const info = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab] : {};
+    
+    const sInput = document.getElementById("info-school-name");
+    const tInput = document.getElementById("info-teacher-name");
+    const pInput = document.getElementById("info-teacher-phone");
+    const totInput = document.getElementById("info-total-students");
+
+    if (sInput) sInput.value = sch;
+    if (tInput) tInput.value = info.teacher || "";
+    if (pInput) pInput.value = info.phone || "";
+    if (totInput) totInput.value = info.total || "";
+}
 
 
 function changeAdminSchool(newSchool) {
-    activeSchool = newSchool;
-    populateSchoolInfoFields(); // ✅ تحديث بيانات المعلم للمدرسة المختارة
+    activeSchool = (newSchool || "").trim();
+    if (typeof toggleEntryBoxesVisibility === "function") {
+        toggleEntryBoxesVisibility();
+    }
+    if (activeSchool !== "ALL") {
+        populateSchoolInfoFields();
+    }
+    if (typeof updateTeacherContactButtons === "function") {
+        updateTeacherContactButtons();
+    }
     renderStudentsTable();
 }
 
@@ -743,9 +745,6 @@ function changeAdminSchool(newSchool) {
                 }
 
                 renderStudentsTable();
-                if (typeof renderStatsTable === "function") {
-                    renderStatsTable();
-                }
             } catch (e) {
                 console.error("خطأ في المزامنة:", e);
             } finally {
@@ -754,76 +753,103 @@ function changeAdminSchool(newSchool) {
         }
 
 
-        function renderStudentsTable() {
-            const cfg = TABS_CONFIG[currentTab];
-            const sch = activeSchool.trim();
-            const infoTotal = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab].total : 0;
-            const totalCount = infoTotal || currentTotals[sch] || 0;
-            
-            document.getElementById("board-title").innerText = sch + " (إجمالي الطلاب: " + totalCount + ")";
+function renderStudentsTable() {
+    const cfg = TABS_CONFIG[currentTab];
+    const sch = (activeSchool || "").trim();
+    const isAll = (isAdmin && sch === "ALL");
 
-            const tbody = document.getElementById("students-tbody");
-            tbody.innerHTML = "";
+    if (typeof toggleEntryBoxesVisibility === "function") {
+        toggleEntryBoxesVisibility();
+    }
 
-            // تصفية طلاب المدرسة وترتيبهم تنازلياً حسب المستوى (الأعلى أولاً)
-            const schoolStudents = currentStudents
-                .filter(st => (st.school || st.s || "").toString().trim() === sch)
-                .sort((a, b) => Number(b.level || b.l || 0) - Number(a.level || a.l || 0));
-            
-            schoolStudents.forEach(function(st, index) {
-                const lvl = Number(st.level || st.l || 0);
-                const name = st.name || st.n || "";
-                const code = st.code || st.c || "";
-                const rawPh = (st.phone || st.ph || "").toString().trim();
-                const img = st.image || st.img || "";
-                const updated = st.updatedAt || "-";
-                const pct = Math.round((lvl / cfg.maxLevels) * 100);
-            // تحديث بطاقات إحصائية المدرسة للتبويب الحالي
-            updateSchoolStatsPanel(schoolStudents, totalCount, cfg.maxLevels);
+    let totalCount = 0;
+    let filteredStudents = [];
 
-                // رابط الصورة
-                const imgLink = img 
-                    ? '<a href="' + img + '" target="_blank" style="color:#2980b9;font-weight:bold;text-decoration:none;">عرض الصورة</a>' 
-                    : '-';
+    if (isAll) {
+        Object.keys(allSchoolsDetails).forEach(function(sKey) {
+            if (sKey.trim() !== "توجيه الحاسب الآلي" && allSchoolsDetails[sKey]) {
+                const info = allSchoolsDetails[sKey][currentTab];
+                totalCount += (info && Number(info.total)) ? Number(info.total) : 0;
+            }
+        });
+        filteredStudents = currentStudents
+            .filter(st => (st.school || st.s || "").toString().trim() !== "")
+            .sort((a, b) => Number(b.level || b.l || 0) - Number(a.level || a.l || 0));
+    } else {
+        const infoTotal = (allSchoolsDetails[sch] && allSchoolsDetails[sch][currentTab]) ? allSchoolsDetails[sch][currentTab].total : 0;
+        totalCount = infoTotal || currentTotals[sch] || 0;
+        filteredStudents = currentStudents
+            .filter(st => (st.school || st.s || "").toString().trim() === sch)
+            .sort((a, b) => Number(b.level || b.l || 0) - Number(a.level || a.l || 0));
+    }
 
-                // رابط الواتساب الذكي
-                let waLink = '-';
-                if (rawPh) {
-                    let cleanPh = rawPh.replace(/\D/g, '');
-                    if (cleanPh.startsWith('0')) {
-                        cleanPh = '2' + cleanPh;
-                    } else if (cleanPh.length === 10 && cleanPh.startsWith('1')) {
-                        cleanPh = '20' + cleanPh;
-                    }
+    const titleEl = document.getElementById("board-title");
+    if (titleEl) {
+        if (isAdmin) {
+            titleEl.style.display = "none";
+        } else {
+            titleEl.style.display = "inline";
+            titleEl.innerText = sch + " (إجمالي الطلاب: " + totalCount + ")";
+        }
+    }
 
-                    const statusMsg = (lvl >= cfg.maxLevels) 
-                        ? "نبارك لك إتمام جميع المستويات بنجاح." 
-                        : "نرجو الاستمرار في إكمال باقي المستويات.";
+    if (typeof updateSchoolStatsPanel === "function") {
+        updateSchoolStatsPanel(filteredStudents, totalCount, cfg.maxLevels);
+    }
+    const tbody = document.getElementById("students-tbody");
+    if (!tbody) return;
 
-                    const msg = "السلام عليكم، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
-                                "الطالب/ة: " + name + "\n" +
-                                "المدرسة: " + sch + "\n" +
-                                "مستوى الإنجاز الحالي في (" + cfg.name + "): " + lvl + " من " + cfg.maxLevels + " (" + pct + "%).\n" +
-                                statusMsg;
+    let rowsHtml = "";
 
-                    const displayPh = (rawPh.length === 10 && rawPh.startsWith('1')) ? '0' + rawPh : rawPh;
+filteredStudents.forEach(function(st, index) {
+        const lvl = Number(st.level || st.l || 0);
+        const name = String(st.name || st.n || "");
+        const stSchool = String(st.school || st.s || "").trim();
+        const nameDisplay = (isAdmin && activeSchool === "ALL") 
+            ? (name + '<br><span style="font-size:11px; color:#2563eb; font-weight:bold;">' + stSchool + '</span>') 
+            : name;
+        const code = String(st.code || st.c || "");
+        const rawPh = String(st.phone || st.ph || "").trim();
+        const img = String(st.image || st.img || "").trim();
+        const updated = String(st.updatedAt || "-");
+        const pct = Math.round((lvl / cfg.maxLevels) * 100);
 
-                    waLink = '<a href="https://wa.me/' + cleanPh + '?text=' + encodeURIComponent(msg) + '" target="_blank" ' +
-                             'style="background:#25D366; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">' +
-                             displayPh + ' 💬</a>';
-                }
+        const imgLink = img 
+            ? '<a href="' + img + '" target="_blank" style="color:#2980b9;font-weight:bold;text-decoration:none;">عرض الصورة</a>' 
+            : '-';
 
-                tbody.innerHTML += '<tr>' +
-                    '<td style="font-weight:bold; color:#1e3a8a;">' + (index + 1) + '</td>' +
-                    '<td>' + imgLink + '</td>' +
-                    '<td>' + name + '</td>' +
-                    '<td>' + code + '</td>' +
-                    '<td>' + waLink + '</td>' +
-                    '<td>' + lvl + '/' + cfg.maxLevels + '</td>' +
-                    '<td><div class="bar"><div class="fill" style="width:' + pct + '%">' + pct + '%</div></div></td>' +
-                    '<td style="font-size:11px; color:#475569; direction:ltr;">' + updated + '</td>' +
-                '</tr>';
-            });
+        let waLink = '-';
+        if (rawPh) {
+            let cleanPh = rawPh.replace(/\D/g, '');
+            if (cleanPh.startsWith('0')) cleanPh = '2' + cleanPh;
+            else if (cleanPh.length === 10 && cleanPh.startsWith('1')) cleanPh = '20' + cleanPh;
+
+            const statusMsg = (lvl >= cfg.maxLevels) ? "نبارك لك إتمام جميع المستويات بنجاح." : "نرجو الاستمرار في إكمال باقي المستويات.";
+            const msg = "السلام عليكم، تحية طيبة من توجيه الحاسب الآلي بإدارة شرق المنصورة التعليمية.\n" +
+                        "الطالب/ة: " + name + "\nالمدرسة: " + stSchool + "\n" +
+                        "مستوى الإنجاز الحالي في (" + cfg.name + "): " + lvl + " من " + cfg.maxLevels + " (" + pct + "%).\n" + statusMsg;
+
+            const displayPh = (rawPh.length === 10 && rawPh.startsWith('1')) ? '0' + rawPh : rawPh;
+            waLink = '<a href="https://wa.me' + cleanPh + '?text=' + encodeURIComponent(msg) + '" target="_blank" style="background:#25D366; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">' + displayPh + ' 💬</a>';
+        }
+
+        rowsHtml += '<tr>' +
+            '<td style="font-weight:bold; color:#1e3a8a;">' + (index + 1) + '</td>' +
+            '<td>' + imgLink + '</td>' +
+            '<td>' + nameDisplay + '</td>' +
+            '<td>' + code + '</td>' +
+            '<td>' + waLink + '</td>' +
+            '<td>' + lvl + '/' + cfg.maxLevels + '</td>' +
+            '<td><div class="bar"><div class="fill" style="width:' + pct + '%">' + pct + '%</div></div></td>' +
+            '<td style="font-size:11px; color:#475569; direction:ltr;">' + updated + '</td>' +
+        '</tr>';
+    });
+
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="8" style="padding:20px; color:#64748b;">لا يوجد طلاب مسجلون حتى الآن.</td></tr>';
+            updateTeacherContactButtons();
+            if (typeof toggleEntryBoxesVisibility === "function") {
+                toggleEntryBoxesVisibility();
+            }
         }
 
         // ==========================================
@@ -880,6 +906,27 @@ function changeAdminSchool(newSchool) {
                     '<span style="font-size:12px; color:#475569; font-weight:bold;">أتموا جميع المستويات</span>' +
                 '</div>';
         }
+function toggleEntryBoxesVisibility() {
+    document.querySelectorAll("div").forEach(function(box) {
+        if (box.classList.contains("card") || box.id === "main-portal" || box.id === "entry-section") return;
+        const firstHeading = box.querySelector(":scope > h3, :scope > h4, :scope > div > h3, :scope > div > h4");
+        if (firstHeading) {
+            const txt = (firstHeading.innerText || "").trim();
+            if (txt.startsWith("أولاً:") || txt.startsWith("ثانياً:")) {
+                box.style.display = isAdmin ? "none" : "block";
+            }
+        }
+    });
+
+    // إخفاء عنوان "ثانياً" والنموذج الخاص به مباشرة
+    document.querySelectorAll("h3, h4").forEach(function(h) {
+        if ((h.innerText || "").trim().startsWith("ثانياً:")) {
+            h.style.display = isAdmin ? "none" : "block";
+        }
+    });
+    const stForm = document.getElementById("unifiedForm");
+    if (stForm) stForm.style.display = isAdmin ? "none" : "block";
+}
 
 
 function toggleStats() {
@@ -1221,17 +1268,53 @@ function openCongrats() {
         // ==========================================
         let currentReportRows = []; // لحفظ بيانات التقرير لتصديرها إلى Excel
 
-        function openReportsTab(btnElement) {
-            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-            if (btnElement) btnElement.classList.add("active");
+function openReportsTab(btnElement) {
+    // تفعيل زر التبويب الرابع
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    if (btnElement) btnElement.classList.add("active");
 
-            document.getElementById("entry-section").style.display = "none";
-            document.getElementById("admin-school-bar").style.display = "none"; // ✅ أضف هذا السطر هنا
-            document.getElementById("reports-section").style.display = "block";
+    // إخفاء شريط اختيار المدرسة في حساب التوجيه
+    const adminBar = document.getElementById("admin-school-bar");
+    if (adminBar) adminBar.style.display = "none";
 
-            const selectedSub = document.getElementById("report-subject-select").value;
-            loadComprehensiveReport(selectedSub);
+    // إخفاء حاوية الطلاب والإحصائيات الفردية بالكامل
+    const entrySec = document.getElementById("entry-section");
+    if (entrySec) entrySec.style.display = "none";
+
+    const statsPanel = document.getElementById("school-stats-panel");
+    if (statsPanel) statsPanel.style.display = "none";
+
+    const quickSearch = document.getElementById("quick-search");
+    if (quickSearch && quickSearch.parentElement) quickSearch.parentElement.style.display = "none";
+
+    const studentsTable = document.getElementById("students-tbody");
+    if (studentsTable) {
+        const tableWrapper = studentsTable.closest(".table-responsive") || studentsTable.closest("table");
+        if (tableWrapper) tableWrapper.style.display = "none";
+    }
+
+    // إظهار قسم التقرير الإحصائي الشامل فقط
+    const reportsSec = document.getElementById("reports-section");
+    if (reportsSec) {
+        reportsSec.style.display = "block";
+        // إذا كان reports-section محبوساً داخل entry-section، نُظهر entry-section مع إخفاء كل أبنائه عدا reports-section
+        if (entrySec && entrySec.contains(reportsSec)) {
+            entrySec.style.display = "block";
+            Array.from(entrySec.children).forEach(child => {
+                if (child.id !== "reports-section") {
+                    child.style.display = "none";
+                }
+            });
         }
+    }
+
+    // تحميل بيانات التقرير الشامل
+    const reportTabSel = document.getElementById("report-tab-select");
+    const selectedTab = reportTabSel ? reportTabSel.value : "g1";
+    if (typeof loadComprehensiveReport === "function") {
+        loadComprehensiveReport(selectedTab);
+    }
+}
 
         async function loadComprehensiveReport(tabKey) {
             const cfg = TABS_CONFIG[tabKey];
