@@ -830,7 +830,7 @@ filteredStudents.forEach(function(st, index) {
                         "مستوى الإنجاز الحالي في (" + cfg.name + "): " + lvl + " من " + cfg.maxLevels + " (" + pct + "%).\n" + statusMsg;
 
             const displayPh = (rawPh.length === 10 && rawPh.startsWith('1')) ? '0' + rawPh : rawPh;
-            waLink = '<a href="https://wa.me' + cleanPh + '?text=' + encodeURIComponent(msg) + '" target="_blank" style="background:#25D366; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">' + displayPh + ' 💬</a>';
+            waLink = '<a href="https://wa.me/' + cleanPh + '?text=' + encodeURIComponent(msg) + '" target="_blank" style="background:#25D366; color:#fff; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:12px; font-weight:bold; display:inline-block;">' + displayPh + ' 💬</a>';
         }
 
         rowsHtml += '<tr>' +
